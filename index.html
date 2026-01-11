@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusFlow | Learning Streak Keeper</title>
+    <meta name="description" content="A zero-distraction, client-side tool for tracking learning streaks.">
+    
+    <!-- Fonts: Inter for clean, Google-style readability -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* =========================================
+           1. CSS VARIABLES & THEME SYSTEM
+           ========================================= */
+        :root {
+            /* Dimensions & Spacing */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 24px;
+            --nav-height: 64px;
+
+            /* Transitions */
+            --transition-fast: 0.2s ease;
+            --transition-smooth: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+            /* Default Theme: Indigo */
+            --primary: #4f46e5;
+            --primary-container: #e0e7ff;
+            --on-primary: #ffffff;
+            --surface: #ffffff;
+            --surface-variant: #f3f4f6;
+            --background: #f9fafb;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --focus-ring: 0 0 0 2px var(--background), 0 0 0 4px var(--primary);
+        }
+
+        /* Theme 2: Emerald */
+        [data-theme="emerald"] {
+            --primary: #059669;
+            --primary-container: #d1fae5;
+            --surface: #ffffff;
+            --surface-variant: #ecfdf5;
+            --background: #f0fdf4;
+        }
+
+        /* Theme 3: Sunset */
+        [data-theme="sunset"] {
+            --primary: #ea580c;
+            --primary-container: #ffedd5;
+            --surface: #ffffff;
+            --surface-variant: #fff7ed;
+            --background: #fffaf0;
+        }
+
+        /* Theme 4: Midnight */
+        [data-theme="midnight"] {
+            --primary: #6366f1;
+            --primary-container: #312e81;
+            --surface: #1e293b;
+            --surface-variant: #0f172a;
+            --background: #020617;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        /* Theme 5: Crimson */
+        [data-theme="crimson"] {
+            --primary: #db2777;
+            --primary-container: #fce7f3;
+            --surface: #ffffff;
+            --surface-variant: #fdf2f8;
+            --background: #fff0f7;
+        }
+
+        /* Theme 6: Ocean */
+        [data-theme="ocean"] {
+            --primary: #0284c7;
+            --primary-container: #e0f2fe;
+            --surface: #ffffff;
+            --surface-variant: #f0f9ff;
+            --background: #f0f9ff;
+        }
+
+        /* Theme 7: Graphite */
+        [data-theme="graphite"] {
+            --primary: #374151;
+            --primary-container: #e5e7eb;
+            --surface: #ffffff;
+            --surface-variant: #f9fafb;
+            --background: #ffffff;
+            --text-main: #000000;
+            --text-muted: #555555;
+            --border: #d1d5db;
+        }
+
+        /* =========================================
+           2. RESET & BASE STYLES
+           ========================================= */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            line-height: 1.5;
+            transition: background-color var(--transition-fast), color var(--transition-fast);
+            -webkit-font-smoothing: antialiased;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* App-like feel */
+        }
+
+        button {
+            font-family: inherit;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: inherit;
+        }
+
+        input {
+            font-family: inherit;
+            border: none;
+            outline: none;
+        }
+
+        /* =========================================
+           3. LAYOUT & COMPONENTS
+           ========================================= */
+        
+        /* App Container */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .app-header {
+            height: var(--nav-height);
+            padding: 0 var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .brand svg { width: 24px; height: 24px; fill: currentColor; }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .nav-btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            transition: all var(--transition-fast);
+        }
+
+        .nav-btn:hover {
+            background-color: var(--surface-variant);
+            color: var(--text-main);
+        }
+
+        .nav-btn.active {
+            background-color: var(--primary-container);
+            color: var(--primary);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-lg);
+            position: relative;
+        }
+
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .view-section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--surface);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow);
+            margin-bottom: var(--spacing-lg);
+            border: 1px solid var(--border);
+            transition: transform var(--transition-fast);
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-main);
+        }
+
+        /* Form Elements */
+        .input-group {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .input-field {
+            flex: 1;
+            padding: var(--spacing-md);
+            background-color: var(--surface-variant);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            color: var(--text-main);
+            border: 1px solid transparent;
+            transition: border-color var(--transition-fast);
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--on-primary);
+            padding: 0 var(--spacing-lg);
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            transition: opacity var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+        }
+
+        .btn-primary:hover { opacity: 0.9; }
+
+        .btn-text {
+            color: var(--primary);
+            font-weight: 500;
+        }
+        
+        .btn-text.danger { color: var(--danger); }
+
+        /* Goal List */
+        .goal-item {
+            background-color: var(--surface-variant);
+            border-radius: var(--radius-sm);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .goal-info { flex: 1; }
+        .goal-title { font-weight: 600; display: block; margin-bottom: 4px; }
+        .goal-stats { font-size: 0.85rem; color: var(--text-muted); }
+        
+        .check-in-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background-color: var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: all var(--transition-fast);
+        }
+
+        .check-in-btn.completed {
+            background-color: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        /* Calendar Grid */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+
+        .cal-day-header {
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: var(--spacing-sm) 0;
+        }
+
+        .cal-cell {
+            aspect-ratio: 1;
+            background-color: var(--surface-variant);
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .cal-cell:hover { transform: scale(0.95); z-index: 1; }
+        
+        .cal-cell.active {
+            background-color: var(--primary);
+            color: var(--on-primary);
+            font-weight: bold;
+        }
+
+        .cal-cell.today {
+            border: 1px solid var(--primary);
+        }
+
+        /* Settings Grid */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .theme-option {
+            height: 80px;
+            border-radius: var(--radius-sm);
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+        }
+
+        .theme-option:hover { transform: translateY(-2px); }
+        .theme-option.selected { border-color: var(--text-main); }
+
+        /* Credits */
+        .credits {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: var(--spacing-xl);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border);
+        }
+        
+        .credits a { color: var(--primary); text-decoration: none; }
+        .credits a:hover { text-decoration: underline; }
+
+        /* Zen Mode */
+        body.zen-mode .goal-stats,
+        body.zen-mode .nav-btn:not(.active),
+        body.zen-mode .cal-day-header { display: none; }
+        body.zen-mode .goal-item { justify-content: center; }
+
+        /* Utility */
+        .hidden { display: none !important; }
+        .flex-row { display: flex; align-items: center; gap: var(--spacing-sm); }
+        .spacer { flex: 1; }
+
+        /* Toast Notification */
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background-color: #323232;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            opacity: 0;
+            animation: toastIn 0.3s forwards;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        @keyframes toastIn { to { opacity: 1; transform: translateY(-10px); } }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .app-header { padding: 0 var(--spacing-md); }
+            .brand span { display: none; } /* Icon only on small mobile */
+            .nav-tabs { gap: 4px; }
+            .nav-btn { padding: 6px 10px; font-size: 0.8rem; }
+            .cal-cell { font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- Header -->
+    <header class="app-header">
+        <div class="brand">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span>FocusFlow</span>
+        </div>
+        <nav class="nav-tabs">
+            <button class="nav-btn active" data-target="dashboard">Dashboard</button>
+            <button class="nav-btn" data-target="calendar">Calendar</button>
+            <button class="nav-btn" data-target="settings">Settings</button>
+            <button class="nav-btn" data-target="guide">Guide</button>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <!-- DASHBOARD VIEW -->
+        <section id="dashboard" class="view-section active">
+            <div class="card">
+                <h2>Today's Focus</h2>
+                <div class="input-group">
+                    <input type="text" id="newGoalInput" class="input-field" placeholder="What are you learning? (e.g., Spanish)" maxlength="40">
+                    <button id="addGoalBtn" class="btn-primary">Add Goal</button>
+                </div>
+            </div>
+
+            <div id="goalsList">
+                <!-- Goals injected here via JS -->
+            </div>
+        </section>
+
+        <!-- CALENDAR VIEW -->
+        <section id="calendar" class="view-section">
+            <div class="card">
+                <div class="calendar-header">
+                    <button id="prevMonth" class="btn-text">&larr; Prev</button>
+                    <h2 id="currentMonthLabel">Month Year</h2>
+                    <button id="nextMonth" class="btn-text">Next &rarr;</button>
+                </div>
+                
+                <!-- Goal Selector for Calendar -->
+                <div style="margin-bottom: 16px;">
+                    <label style="font-size: 0.9rem; color: var(--text-muted); margin-right: 8px;">Viewing data for:</label>
+                    <select id="calendarGoalSelect" class="input-field" style="padding: 4px 8px; width: auto; min-width: 150px;">
+                        <!-- Options filled via JS -->
+                    </select>
+                </div>
+
+                <div class="calendar-grid">
+                    <div class="cal-day-header">S</div>
+                    <div class="cal-day-header">M</div>
+                    <div class="cal-day-header">T</div>
+                    <div class="cal-day-header">W</div>
+                    <div class="cal-day-header">T</div>
+                    <div class="cal-day-header">F</div>
+                    <div class="cal-day-header">S</div>
+                </div>
+                <div id="calendarDays" class="calendar-grid" style="margin-top: 2px;">
+                    <!-- Days injected via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS VIEW -->
+        <section id="settings" class="view-section">
+            <div class="card">
+                <h2>Appearance</h2>
+                <div class="settings-grid" id="themeContainer">
+                    <!-- Theme buttons injected here -->
+                </div>
+                
+                <div style="margin-top: 24px; display: flex; align-items: center; justify-content: space-between;">
+                    <span>Zen Mode (Hide Stats)</span>
+                    <button id="zenToggle" class="btn-text">Toggle Off</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Data Management</h2>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;">
+                    Your data is stored locally on this device. Export it to keep a backup or transfer to another browser.
+                </p>
+                <div class="flex-row" style="flex-wrap: wrap;">
+                    <button id="exportBtn" class="btn-primary" style="background-color: var(--text-main);">Export Data (JSON)</button>
+                    <button id="importBtn" class="btn-primary" style="background-color: var(--surface-variant); color: var(--text-main);">Import Data</button>
+                    <input type="file" id="importFile" accept=".json" class="hidden">
+                    <button id="resetBtn" class="btn-text danger">Reset All Data</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- GUIDE VIEW -->
+        <section id="guide" class="view-section">
+            <div class="card">
+                <h2>User Guide</h2>
+                <article style="line-height: 1.7; color: var(--text-main);">
+                    <p><strong>FocusFlow</strong> is a zero-distraction tool to help you build consistent learning habits.</p>
+                    <br>
+                    <h3>How to Use</h3>
+                    <ul>
+                        <li style="margin-left: 20px;"><strong>Add a Goal:</strong> On the Dashboard, type a skill (e.g., "Guitar") and press Enter or click Add.</li>
+                        <li style="margin-left: 20px;"><strong>Track Progress:</strong> Every day you practice, click the circle icon next to your goal on the Dashboard to mark it complete.</li>
+                        <li style="margin-left: 20px;"><strong>Calendar View:</strong> Navigate to the Calendar tab to see your history. Click a day to toggle it. You can edit past dates freely.</li>
+                    </ul>
+                    <br>
+                    <h3>Customization</h3>
+                    <ul>
+                        <li style="margin-left: 20px;"><strong>Themes:</strong> Go to Settings to choose from 7 premium color palettes.</li>
+                        <li style="margin-left: 20px;"><strong>Zen Mode:</strong> Enables a distraction-free interface by hiding numerical stats.</li>
+                    </ul>
+                    <br>
+                    <h3>Data Privacy</h3>
+                    <p>FocusFlow runs entirely in your browser. No data is sent to any server. You own your data.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- Credits Footer (Visible on all sections) -->
+        <footer class="credits">
+            Made with ❤️ by <a href="https://github.com/Aliriyaj007" target="_blank">Aliriyaj007</a>
+        </footer>
+
+    </main>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<script>
+/**
+ * FocusFlow Application Logic
+ * Architecture: IIFE (Module Pattern)
+ * Dependencies: None (Vanilla JS)
+ */
+(() => {
+    
+    // =========================================
+    // 1. STATE MANAGEMENT & DATA MODEL
+    // =========================================
+    
+    const STORAGE_KEY = 'focusFlow_data';
+    
+    const defaultState = {
+        goals: [], // { id, title, created: 'ISO-String', entries: ['YYYY-MM-DD'] }
+        settings: {
+            theme: 'indigo',
+            zenMode: false,
+            calendarViewGoalId: null // ID of goal currently shown in calendar
+        },
+        ui: {
+            currentMonth: new Date()
+        }
+    };
+
+    let state = { ...defaultState };
+
+    // =========================================
+    // 2. UTILITIES
+    // =========================================
+
+    const Utils = {
+        generateId: () => Date.now().toString(36) + Math.random().toString(36).substr(2),
+        
+        formatDate: (date) => {
+            // Returns YYYY-MM-DD local time (prevents timezone shifts)
+            const offset = date.getTimezoneOffset();
+            const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+            return localDate.toISOString().split('T')[0];
+        },
+
+        getStreak: (entries) => {
+            if (!entries || entries.length === 0) return 0;
+            
+            const sorted = [...entries].sort((a, b) => new Date(b) - new Date(a)); // Descending
+            const today = Utils.formatDate(new Date());
+            const yesterday = Utils.formatDate(new Date(Date.now() - 86400000));
+
+            let streak = 0;
+            let checkDate = new Date();
+
+            // If today not done, check if yesterday was done. If not, streak is 0.
+            if (sorted[0] !== today) {
+                if (sorted[0] !== yesterday) return 0;
+                checkDate.setDate(checkDate.getDate() - 1); // Start checking from yesterday
+            }
+
+            // Iterate backwards
+            for (let i = 0; i < sorted.length; i++) {
+                const expectedDateStr = Utils.formatDate(checkDate);
+                if (sorted[i] === expectedDateStr) {
+                    streak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            return streak;
+        },
+
+        showToast: (message) => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    };
+
+    // =========================================
+    // 3. DATA PERSISTENCE (Storage)
+    // =========================================
+
+    const Store = {
+        load: () => {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    state = { ...state, ...parsed };
+                    // Reset UI transient state
+                    state.ui = { ...defaultState.ui };
+                } catch (e) {
+                    console.error("Data load error", e);
+                }
+            }
+        },
+        save: () => {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                goals: state.goals,
+                settings: state.settings
+            }));
+        },
+        exportData: () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "focusflow_backup_" + Utils.formatDate(new Date()) + ".json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        },
+        importData: (file) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    if (json.goals && Array.isArray(json.goals)) {
+                        state.goals = json.goals;
+                        state.settings = json.settings || defaultState.settings;
+                        Store.save();
+                        App.init();
+                        Utils.showToast('Data restored successfully!');
+                    } else {
+                        throw new Error('Invalid format');
+                    }
+                } catch (err) {
+                    Utils.showToast('Error: Invalid file format.');
+                }
+            };
+            reader.readAsText(file);
+        },
+        reset: () => {
+            if(confirm("Are you sure? This will delete all goals permanently.")) {
+                state = { ...defaultState };
+                Store.save();
+                App.init();
+                Utils.showToast('All data cleared.');
+            }
+        }
+    };
+
+    // =========================================
+    // 4. APP LOGIC
+    // =========================================
+
+    const Logic = {
+        addGoal: (title) => {
+            if (!title.trim()) return;
+            const newGoal = {
+                id: Utils.generateId(),
+                title: title.trim(),
+                created: new Date().toISOString(),
+                entries: []
+            };
+            state.goals.push(newGoal);
+            state.settings.calendarViewGoalId = newGoal.id; // Select new goal
+            Store.save();
+            return newGoal;
+        },
+
+        deleteGoal: (id) => {
+            state.goals = state.goals.filter(g => g.id !== id);
+            if (state.settings.calendarViewGoalId === id) {
+                state.settings.calendarViewGoalId = state.goals.length > 0 ? state.goals[0].id : null;
+            }
+            Store.save();
+        },
+
+        toggleEntry: (goalId, dateStr) => {
+            const goal = state.goals.find(g => g.id === goalId);
+            if (!goal) return;
+
+            const index = goal.entries.indexOf(dateStr);
+            if (index > -1) {
+                goal.entries.splice(index, 1); // Remove
+            } else {
+                goal.entries.push(dateStr); // Add
+            }
+            Store.save();
+        },
+
+        getGoal: (id) => state.goals.find(g => g.id === id)
+    };
+
+    // =========================================
+    // 5. UI CONTROLLER
+    // =========================================
+
+    const UI = {
+        elements: {
+            tabs: document.querySelectorAll('.nav-btn'),
+            sections: document.querySelectorAll('.view-section'),
+            goalList: document.getElementById('goalsList'),
+            input: document.getElementById('newGoalInput'),
+            addBtn: document.getElementById('addGoalBtn'),
+            themeContainer: document.getElementById('themeContainer'),
+            calendarGrid: document.getElementById('calendarDays'),
+            monthLabel: document.getElementById('currentMonthLabel'),
+            calSelect: document.getElementById('calendarGoalSelect'),
+            zenToggle: document.getElementById('zenToggle')
+        },
+
+        init: () => {
+            UI.applyTheme(state.settings.theme);
+            UI.applyZenMode();
+            UI.renderDashboard();
+            UI.renderCalendar();
+            UI.renderSettings();
+            UI.bindEvents();
+        },
+
+        bindEvents: () => {
+            // Navigation
+            UI.elements.tabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    UI.elements.tabs.forEach(t => t.classList.remove('active'));
+                    UI.elements.sections.forEach(s => s.classList.remove('active'));
+                    e.target.classList.add('active');
+                    document.getElementById(e.target.dataset.target).classList.add('active');
+                    if(e.target.dataset.target === 'calendar') UI.renderCalendar();
+                });
+            });
+
+            // Add Goal
+            UI.elements.addBtn.addEventListener('click', () => {
+                if (Logic.addGoal(UI.elements.input.value)) {
+                    UI.elements.input.value = '';
+                    UI.renderDashboard();
+                    UI.renderCalendar(); // Update select
+                    Utils.showToast('Goal added');
+                }
+            });
+
+            UI.elements.input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') UI.elements.addBtn.click();
+            });
+
+            // Calendar Nav
+            document.getElementById('prevMonth').addEventListener('click', () => {
+                state.ui.currentMonth.setMonth(state.ui.currentMonth.getMonth() - 1);
+                UI.renderCalendar();
+            });
+            document.getElementById('nextMonth').addEventListener('click', () => {
+                state.ui.currentMonth.setMonth(state.ui.currentMonth.getMonth() + 1);
+                UI.renderCalendar();
+            });
+
+            // Calendar Select Change
+            UI.elements.calSelect.addEventListener('change', (e) => {
+                state.settings.calendarViewGoalId = e.target.value;
+                Store.save();
+                UI.renderCalendar();
+            });
+
+            // Zen Mode
+            UI.elements.zenToggle.addEventListener('click', () => {
+                state.settings.zenMode = !state.settings.zenMode;
+                UI.applyZenMode();
+                Store.save();
+            });
+
+            // Import/Export/Reset
+            document.getElementById('exportBtn').addEventListener('click', Store.exportData);
+            document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+            document.getElementById('importFile').addEventListener('change', (e) => {
+                if(e.target.files.length) Store.importData(e.target.files[0]);
+            });
+            document.getElementById('resetBtn').addEventListener('click', Store.reset);
+        },
+
+        renderDashboard: () => {
+            const list = UI.elements.goalList;
+            list.innerHTML = '';
+            const today = Utils.formatDate(new Date());
+
+            state.goals.forEach(goal => {
+                const streak = Utils.getStreak(goal.entries);
+                const isDoneToday = goal.entries.includes(today);
+                
+                const div = document.createElement('div');
+                div.className = 'goal-item';
+                div.innerHTML = `
+                    <div class="goal-info">
+                        <span class="goal-title">${goal.title}</span>
+                        <span class="goal-stats">
+                            ${streak > 0 ? '🔥 ' + streak + ' day streak' : 'Start your streak!'}
+                            • Total: ${goal.entries.length} sessions
+                        </span>
+                    </div>
+                    <button class="check-in-btn ${isDoneToday ? 'completed' : ''}" title="Toggle Today">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                    </button>
+                    <button class="btn-text danger" style="margin-left: 8px; padding: 4px;" title="Delete Goal">
+                         &times;
+                    </button>
+                `;
+
+                // Toggle Event
+                div.querySelector('.check-in-btn').addEventListener('click', () => {
+                    Logic.toggleEntry(goal.id, today);
+                    UI.renderDashboard();
+                    UI.renderCalendar(); // Reflect changes
+                });
+
+                // Delete Event
+                div.querySelector('.danger').addEventListener('click', () => {
+                    Logic.deleteGoal(goal.id);
+                    UI.renderDashboard();
+                    UI.renderCalendar();
+                });
+
+                list.appendChild(div);
+            });
+        },
+
+        renderCalendar: () => {
+            // Populate Select
+            const select = UI.elements.calSelect;
+            if (select.options.length !== state.goals.length) {
+                select.innerHTML = state.goals.map(g => 
+                    `<option value="${g.id}" ${g.id === state.settings.calendarViewGoalId ? 'selected' : ''}>${g.title}</option>`
+                ).join('');
+            }
+
+            const activeGoalId = state.settings.calendarViewGoalId || (state.goals[0] ? state.goals[0].id : null);
+            if (!activeGoalId) return; // No goals
+
+            const goal = Logic.getGoal(activeGoalId);
+            const year = state.ui.currentMonth.getFullYear();
+            const month = state.ui.currentMonth.getMonth();
+
+            // Header
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            UI.elements.monthLabel.textContent = `${monthNames[month]} ${year}`;
+
+            // Grid Generation
+            const grid = UI.elements.calendarGrid;
+            grid.innerHTML = '';
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay(); // 0 (Sun) to 6 (Sat)
+
+            // Empty cells for prev month padding
+            for (let i = 0; i < startingDay; i++) {
+                const empty = document.createElement('div');
+                grid.appendChild(empty);
+            }
+
+            const todayStr = Utils.formatDate(new Date());
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const cellDate = new Date(year, month, i);
+                const dateStr = Utils.formatDate(cellDate);
+                const isDone = goal.entries.includes(dateStr);
+                const isToday = dateStr === todayStr;
+
+                const cell = document.createElement('div');
+                cell.className = `cal-cell ${isDone ? 'active' : ''} ${isToday ? 'today' : ''}`;
+                cell.textContent = i;
+
+                cell.addEventListener('click', () => {
+                    Logic.toggleEntry(goal.id, dateStr);
+                    UI.renderCalendar();
+                    UI.renderDashboard(); // Update streaks on dashboard
+                });
+
+                grid.appendChild(cell);
+            }
+        },
+
+        renderSettings: () => {
+            const themes = [
+                { id: 'indigo', color: '#4f46e5', name: 'Indigo' },
+                { id: 'emerald', color: '#059669', name: 'Emerald' },
+                { id: 'sunset', color: '#ea580c', name: 'Sunset' },
+                { id: 'midnight', color: '#1e293b', name: 'Midnight' },
+                { id: 'crimson', color: '#db2777', name: 'Crimson' },
+                { id: 'ocean', color: '#0284c7', name: 'Ocean' },
+                { id: 'graphite', color: '#374151', name: 'Graphite' }
+            ];
+
+            const container = UI.elements.themeContainer;
+            container.innerHTML = themes.map(t => `
+                <div class="theme-option ${state.settings.theme === t.id ? 'selected' : ''}" 
+                     style="background-color: ${t.color}"
+                     onclick="UI.setTheme('${t.id}')">
+                    ${t.name}
+                </div>
+            `).join('');
+
+            UI.elements.zenToggle.textContent = state.settings.zenMode ? "Toggle On" : "Toggle Off";
+        },
+
+        setTheme: (themeId) => {
+            state.settings.theme = themeId;
+            Store.save();
+            UI.applyTheme(themeId);
+            UI.renderSettings();
+        },
+
+        applyTheme: (themeId) => {
+            document.body.setAttribute('data-theme', themeId);
+        },
+
+        applyZenMode: () => {
+            if (state.settings.zenMode) {
+                document.body.classList.add('zen-mode');
+            } else {
+                document.body.classList.remove('zen-mode');
+            }
+            UI.renderSettings();
+        }
+    };
+
+    // =========================================
+    // 6. INITIALIZATION
+    // =========================================
+
+    const App = {
+        init: () => {
+            Store.load();
+            UI.init();
+        },
+        // Public method for restart
+        restart: () => App.init()
+    };
+
+    // Start the app
+    App.init();
+
+})();
+</script>
+</body>
+</html>
